@@ -41,11 +41,16 @@ def landing_page():
 def get_drinks():
 
     drinks = Drink.query.all()  # get short()
-    print(drinks)
+
+    if drinks:
+        print(drinks)
+        data = [drinks.short() for drink in drinks]
+    else:
+        data = []
 
     return jsonify({
         'success': True,
-        'drink': drinks
+        'drink': data
     })
 
 
@@ -106,32 +111,37 @@ def post_drinks(jwt):
     new_title = data.get('title', None)
     new_recipe = data.get('recipe', None)
 
-    new_drink = []
-    print(new_drink)
+    new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
 
     try:
-        new_drink = Drink(
+        # Drink.insert(new_drink)
+        new_drink.insert()
+        print("hello")
+        return "hello"
+
+    except Exception as e:
+        print(e)
+        abort(404)
+    
+'''    try:
+        new_drink1 = Drink(
             title=new_title,
             recipe=new_recipe
         )
-        # new_drink.insert()
+        new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
 
-        return jwt
+        # print(new_drink)
+        # Drink.insert(new_drink)
+
+        return jsonify({
+            'success': True,
+            'title': new_title
+            # 'drinks': Drink.long(new_drink)
+            # 'drinks': new_drink
+        })
 
     except BaseException:
-        abort(401)
-
-
-"""        new_drink.insert() """
-
-
-"""         return jsonify({
-            'success': True,
-            'drinks': Drink.long(new_drink)
-        }) """
-
-""" except BaseException:
-        abort(401) """
+        abort(401)'''
 
 
 '''
