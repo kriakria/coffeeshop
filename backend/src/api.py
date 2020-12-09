@@ -40,19 +40,28 @@ def landing_page():
 @app.route('/drinks', methods=['GET'])
 def get_drinks():
 
-    drinks = Drink.query.all()  # get short()
+    # drinks = Drink.query.all()
+    short_drinks = get_short_drinks()
 
-    if drinks:
-        print(drinks)
-        data = [drinks.short() for drink in drinks]
-    else:
-        data = []
+    data = []
 
-    return jsonify({
-        'success': True,
-        'drink': data
-    })
+    try:
+        if short_drinks:
+            print("drinks")
+            # data = [drink.short() for drink in drinks]
+            for drink in short_drinks:
+                data.append(drink)
 
+        else:
+            data = []
+
+        return jsonify({
+            'success': True,
+            'drinks': data
+        })
+    except Exception as e:
+        print(e)
+        abort(404)
 
 '''
 @TODO implement endpoint
@@ -66,29 +75,51 @@ def get_drinks():
 
 
 @app.route('/drink-test')
-def test():
-    auth_header = request.headers['Authorization']
-    header_parts = auth_header.split(' ')[1]
-    print(header_parts)
-    print(auth_header)
+@requires_auth('get:drinks-detail')
+def test(jwt):
+    # auth_header = request.headers['Authorization']
+    # header_parts = auth_header.split(' ')[1]
+    # print(header_parts)
+    # print(auth_header)
 
     return 'not implemented'
 
 
-@app.route('/drinks-detail', methods=['GET'])
+def get_short_drinks():
+    drinks = Drink.query.all()
+    short_drinks = []
+    for drink in drinks:
+        short_drinks.append(drink.short())
+    return short_drinks
+
+
+def get_long_drinks():
+    drinks = Drink.query.all()
+    long_drinks = []
+    for drink in drinks:
+        long_drinks.append(drink.long())
+    return long_drinks
+
+
+@app.route('/drinks-detail')
 @requires_auth('get:drinks-detail')
 def get_drinks_detail(jwt):
 
-    jwt = get_token_auth_header()
-    print(jwt)
+    long_drinks = get_long_drinks()
 
-    drinks = Drink.query.all()  # get long()
-    print(drinks)
+    if len(long_drinks) == 0:
+        abort(401)
 
-    return jsonify({
-        'success': True,
-        'drinks': drinks
-    })
+    try:
+        return jsonify({
+            'success': True,
+            'drinks': long_drinks
+
+        })
+
+    except Exception as e:
+        print(e)
+        abort(404)
 
 
 '''
@@ -107,41 +138,29 @@ def get_drinks_detail(jwt):
 @requires_auth('post:drinks')
 def post_drinks(jwt):
 
-    data = request.get_json()
-    new_title = data.get('title', None)
-    new_recipe = data.get('recipe', None)
+    drink = request.get_json()
+    new_title = drink.get('title', None)
+    new_recipe = drink.get('recipe', None)
+
+    if new_title is None:
+        abort(404)
+
+    if new_recipe is None:
+        abort(404)
 
     new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
 
     try:
-        # Drink.insert(new_drink)
         new_drink.insert()
-        print("hello")
-        return "hello"
+
+        return jsonify({
+            'success': True,
+            'drinks': new_drink.long()
+        })
 
     except Exception as e:
         print(e)
         abort(404)
-    
-'''    try:
-        new_drink1 = Drink(
-            title=new_title,
-            recipe=new_recipe
-        )
-        new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
-
-        # print(new_drink)
-        # Drink.insert(new_drink)
-
-        return jsonify({
-            'success': True,
-            'title': new_title
-            # 'drinks': Drink.long(new_drink)
-            # 'drinks': new_drink
-        })
-
-    except BaseException:
-        abort(401)'''
 
 
 '''
@@ -156,6 +175,68 @@ def post_drinks(jwt):
         or appropriate status code indicating reason for failure
 '''
 
+# This endpoint allows a user with 'patch:drinks' permission to edit the title of a drink
+@app.route('/drinks/<int:drink_id>', methods=['PATCH'])
+@requires_auth('patch:drinks')
+def edit_drink(jwt, drink_id):
+
+    drink_update = request.get_json()
+    new_title = drink_update.get('title', None)
+    new_recipe = drink_update.get('recipe', None)
+
+    try:
+        if new_recipe is None:
+            if new_title is None:
+                print("aborted")
+                abort(404)
+
+            elif new_title is not None:
+                # try:
+                print("there is a new title")
+                drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+
+                if drink is None:
+                    abort(404)
+
+                else:
+                    drink.title = new_title
+                    # drink.recipe = new_recipe
+                    drink.insert()
+
+                return jsonify({
+                    'success': True,
+                    'drinks': drink.long()
+                })
+    except Exception as e:
+        print(e)
+        abort(404)
+
+
+
+
+
+
+    '''try:
+        # if new_title is None:
+            # abort(404)
+
+        # else:
+        drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+
+        if drink is None:
+            abort(404)
+
+        else:
+            drink.title = new_title
+            # drink.recipe = new_recipe
+            drink.insert()
+
+            return jsonify({
+                'success': True,
+                'drinks': drink.long()
+            })'''
+
+
 
 '''
 @TODO implement endpoint
@@ -169,7 +250,29 @@ def post_drinks(jwt):
 '''
 
 
-## Error Handling
+# In this endpoint a user with 'delete:drinks' permission can delete a drink from the database
+@app.route('/drinks/<int:drink_id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
+def delete_drink(jwt, drink_id):
+
+    drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+
+    if drink is None:
+        abort(404)
+
+    try:
+        drink.delete()
+
+        return jsonify({
+            'success': True,
+            'delete': drink_id
+        })
+    except Exception as e:
+        print(e)
+        abort(404)
+
+
+# Error Handling
 '''
 Example error handling for unprocessable entity
 '''
@@ -230,13 +333,13 @@ def server_error(error):
     }), 500
 '''
 @TODO implement error handler for 404
-    error handler should conform to general task above 
+    error handler should conform to general task above
 '''
 
 
 '''
 @TODO implement error handler for AuthError
-    error handler should conform to general task above 
+    error handler should conform to general task above
 '''
 
 
