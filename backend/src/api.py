@@ -21,11 +21,6 @@ CORS(app)
 # ROUTES
 
 
-@app.route('/coffee')
-def landing_page():
-    return 'coffee :)'
-
-
 '''
 @TODO implement endpoint
     GET /drinks
@@ -40,15 +35,12 @@ def landing_page():
 @app.route('/drinks', methods=['GET'])
 def get_drinks():
 
-    # drinks = Drink.query.all()
     short_drinks = get_short_drinks()
 
     data = []
 
     try:
         if short_drinks:
-            print("drinks")
-            # data = [drink.short() for drink in drinks]
             for drink in short_drinks:
                 data.append(drink)
 
@@ -58,10 +50,11 @@ def get_drinks():
         return jsonify({
             'success': True,
             'drinks': data
-        })
+        }), 200
     except Exception as e:
         print(e)
         abort(404)
+
 
 '''
 @TODO implement endpoint
@@ -114,8 +107,7 @@ def get_drinks_detail(jwt):
         return jsonify({
             'success': True,
             'drinks': long_drinks
-
-        })
+        }), 200
 
     except Exception as e:
         print(e)
@@ -142,11 +134,11 @@ def post_drinks(jwt):
     new_title = drink.get('title', None)
     new_recipe = drink.get('recipe', None)
 
-    if new_title is None:
-        abort(404)
+    #if new_title is None:
+        #abort(404)
 
-    if new_recipe is None:
-        abort(404)
+    #if new_recipe is None:
+        #abort(404)
 
     new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
 
@@ -156,7 +148,7 @@ def post_drinks(jwt):
         return jsonify({
             'success': True,
             'drinks': new_drink.long()
-        })
+        }), 200
 
     except Exception as e:
         print(e)
@@ -180,47 +172,11 @@ def post_drinks(jwt):
 @requires_auth('patch:drinks')
 def edit_drink(jwt, drink_id):
 
-    drink_update = request.get_json()
+    drink_update = request.get_json()    
     new_title = drink_update.get('title', None)
     new_recipe = drink_update.get('recipe', None)
 
     try:
-        if new_recipe is None:
-            if new_title is None:
-                print("aborted")
-                abort(404)
-
-            elif new_title is not None:
-                # try:
-                print("there is a new title")
-                drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
-
-                if drink is None:
-                    abort(404)
-
-                else:
-                    drink.title = new_title
-                    # drink.recipe = new_recipe
-                    drink.insert()
-
-                return jsonify({
-                    'success': True,
-                    'drinks': drink.long()
-                })
-    except Exception as e:
-        print(e)
-        abort(404)
-
-
-
-
-
-
-    '''try:
-        # if new_title is None:
-            # abort(404)
-
-        # else:
         drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
 
         if drink is None:
@@ -228,14 +184,16 @@ def edit_drink(jwt, drink_id):
 
         else:
             drink.title = new_title
-            # drink.recipe = new_recipe
+            drink.recipe = json.dumps(new_recipe)
             drink.insert()
 
-            return jsonify({
-                'success': True,
-                'drinks': drink.long()
-            })'''
-
+        return jsonify({
+            'success': True,
+            'drinks': drink.long()
+        }), 200
+    except Exception as e:
+        print(e)
+        abort(404)
 
 
 '''
@@ -266,7 +224,7 @@ def delete_drink(jwt, drink_id):
         return jsonify({
             'success': True,
             'delete': drink_id
-        })
+        }), 200
     except Exception as e:
         print(e)
         abort(404)
