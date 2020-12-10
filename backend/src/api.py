@@ -143,7 +143,7 @@ def post_drinks(jwt):
     new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
 
     try:
-        new_drink.insert()
+        new_drink.update()
 
         return jsonify({
             'success': True,
